@@ -125,6 +125,13 @@ function applyDOMTweaks() {
   const fullscreenButton = document.querySelector('button[title="Fullscreen"]');
   if (fullscreenButton) fullscreenButton.remove();
 
+  // Remove the non-functional "Templates" feature from the Home Screen.
+  const templatesButton = Array.from(document.querySelectorAll('span.bhover'))
+                               .find(el => el.textContent.trim() === 'Templates');
+  if (templatesButton) {
+    templatesButton.remove();
+  }
+
   // Remove the bottom promotional banner
   const bottomBanner = document.querySelector('div[style*="filter: drop-shadow"][style*="bottom: 0px"]');
   if (bottomBanner) {

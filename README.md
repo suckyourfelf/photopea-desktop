@@ -26,6 +26,11 @@ You can manually update the core Photopea application files to the latest versio
 
 **Disclaimer:** This wrapper is tested with the version of Photopea it was released with. While the updater allows you to fetch newer versions, it cannot be guaranteed that they will remain compatible with the existing wrapper code. If you experience issues after updating, you can delete the folder you copied to revert the update.
 
+## Known Issues
+
+*   Integrations for Google Drive, Dropbox, etc. do not work and have been removed from the home screen.
+*   The "Templates" feature is non-functional. The button has been removed from the home screen.
+
 ## Credits
 
 The core downloader and patcher script (`updater.py`) is heavily based on the work from the **[photopea-v-2 project on GitFlic](https://gitflic.ru/project/photopea-v2/photopea-v-2/)**.
