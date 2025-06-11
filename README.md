@@ -1,6 +1,6 @@
 # Photopea Desktop
 
-An unofficial Electron wrapper for Photopea, designed for a seamless desktop experience with a focus on offline functionality.
+An unofficial Electron wrapper for Photopea, designed for a seamless desktop experience with a focus on offline functionality. 
 
 ## Installation
 
