@@ -6,7 +6,7 @@ Mirror: https://gitflic.ru/project/suckyourfelf/photopea-desktop
 
 ## Installation
 
-Ready-to-use installers for Windows and Linux are available on the project's **Releases** page.
+Ready-to-use installers for Windows and Linux are available on the project's [**Releases**](https://github.com/suckyourfelf/photopea-desktop/releases) page.
 
 The installer is fully self-contained. No internet connection is required to install or run the application with its bundled features.
 
