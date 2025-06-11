@@ -2,6 +2,8 @@
 
 An unofficial Electron wrapper for Photopea, designed for a seamless desktop experience with a focus on offline functionality. 
 
+Mirror: https://gitflic.ru/project/suckyourfelf/photopea-desktop
+
 ## Installation
 
 Ready-to-use installers for Windows and Linux are available on the project's **Releases** page.
