@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Font Manager</title>
+    <style>
+        body { font-family: sans-serif; background-color: #222; color: #eee; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .header { padding: 10px; background-color: #333; border-bottom: 1px solid #444; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input, button { padding: 8px; border-radius: 4px; border: 1px solid #555; background-color: #444; color: #eee; }
+        button { cursor: pointer; }
+        button:hover { background-color: #555; }
+        #download-btn { background-color: #007acc; border-color: #005c99; }
+        .font-list-container { flex-grow: 1; overflow-y: auto; position: relative; }
+        #font-list-sizer { position: relative; width: 100%; top: 0; left: 0; }
+        #font-list-viewport { position: absolute; top: 0; left: 0; width: 100%; }
+        .font-item { display: flex; align-items: center; height: 30px; padding: 0 10px; box-sizing: border-box; border-bottom: 1px solid #333; }
+        .font-item.downloaded { color: #88dd88; }
+        .font-item input { margin-right: 10px; }
+        .status-bar { padding: 5px 10px; background-color: #333; border-top: 1px solid #444; font-size: 0.9em; height: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="controls">
+            <input type="text" id="search-input" placeholder="Search fonts...">
+            <button id="select-all-btn">Select All</button>
+            <button id="deselect-all-btn">Deselect All</button>
+            <button id="download-btn">Download Selected</button>
+        </div>
+    </div>
+    <div class="font-list-container" id="font-list-container">
+        <div id="font-list-sizer"></div>
+        <div id="font-list-viewport"></div>
+    </div>
+    <div class="status-bar" id="status-bar">Ready</div>
+</body>
+<script src="./font-manager-renderer.js"></script>
+</html>

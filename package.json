@@ -1,0 +1,31 @@
+{
+    "name": "photopea-desktop",
+    "version": "1.0.0",
+    "main": "main.js",
+    "scripts": {
+      "start": "electron-forge start",
+      "dev": "electron .",
+      "package": "electron-forge package",
+      "make": "electron-forge make",
+      "make:linux": "electron-forge package"
+    },
+    "keywords": [],
+    "author": "fiso64",
+    "license": "GPL-3.0",
+    "description": "A desktop wrapper for Photopea.",
+    "dependencies": {
+      "electron-squirrel-startup": "^1.0.1",
+      "express": "^4.19.2"
+    },
+    "devDependencies": {
+      "@electron-forge/cli": "^7.8.1",
+      "@electron-forge/maker-deb": "^7.8.1",
+      "@electron-forge/maker-rpm": "^7.8.1",
+      "@electron-forge/maker-squirrel": "^7.8.1",
+      "@electron-forge/maker-zip": "^7.8.1",
+      "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+      "@electron-forge/plugin-fuses": "^7.8.1",
+      "@electron/fuses": "^1.8.0",
+      "electron": "^31.0.2"
+    }
+  }
