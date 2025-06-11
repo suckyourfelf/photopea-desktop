@@ -22,6 +22,47 @@ let currentDownloadController = null; // To handle download cancellation
 let fontManifest = []; // Cache for the font manifest for on-demand downloading
 let fontUpdateQueue = [];
 let isUpdatingFontsList = false;
+let filesToOpenOnLaunch = []; // For handling files passed at startup
+
+// --- Single Instance and "Open With" handling ---
+const gotTheLock = app.requestSingleInstanceLock();
+
+// On first launch, parse arguments for files to open.
+if (gotTheLock) {
+    const rawArgs = process.argv.slice(app.isPackaged ? 1 : 2);
+    filesToOpenOnLaunch = rawArgs.filter(arg => {
+        try {
+            // Filter out flags (e.g. --enable-logging) and non-existent/directory paths
+            return !arg.startsWith('--') && fs.statSync(arg).isFile();
+        } catch (e) {
+            return false;
+        }
+    });
+}
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // A second instance was launched. Focus our window and open the new files.
+    if (win) {
+        const filesToOpen = commandLine.slice(app.isPackaged ? 1 : 2).filter(arg => {
+            try {
+                return !arg.startsWith('--') && fs.statSync(arg).isFile();
+            } catch (e) {
+                return false;
+            }
+        });
+
+        if (filesToOpen.length > 0) {
+            openFiles(filesToOpen);
+        }
+
+        if (win.isMinimized()) win.restore();
+        win.focus();
+    }
+  });
+}
 
 // --- Paths Setup ---
 // User-overridable content (from updater.py) goes here
@@ -319,6 +360,41 @@ ipcMain.on('close-font-manager-window', (event) => {
     }
 });
 
+// --- "Open With" File Handling Logic ---
+const mimeTypes = {
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+  '.webp': 'image/webp', '.svg': 'image/svg+xml', '.psd': 'image/vnd.adobe.photoshop',
+  '.xd': 'application/vnd.adobe.xd', '.sketch': 'application/vnd.sketch', '.pdf': 'application/pdf',
+  '.xcf': 'image/x-xcf', '.tiff': 'image/tiff', '.tif': 'image/tiff', '.ico': 'image/x-icon',
+  '.bmp': 'image/bmp'
+};
+
+function fileToDataURI(filePath) {
+    try {
+        const fileContent = fs.readFileSync(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        const mimeType = mimeTypes[ext] || 'application/octet-stream';
+        return `data:${mimeType};base64,${fileContent.toString('base64')}`;
+    } catch (error) {
+        console.error(`Failed to read and encode file ${filePath}:`, error);
+        return null;
+    }
+}
+
+function openFiles(filePaths) {
+    if (!win || win.isDestroyed()) {
+        console.error("Main window not available to open files.");
+        return;
+    }
+    const dataUris = filePaths.map(fileToDataURI).filter(uri => uri !== null);
+    if (dataUris.length > 0) {
+        const config = { files: dataUris };
+        const encodedConfig = encodeURIComponent(JSON.stringify(config));
+        const newUrl = `http://localhost:${serverPort}#${encodedConfig}`;
+        win.loadURL(newUrl);
+    }
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1200,
@@ -335,10 +411,10 @@ function createWindow() {
   // --- UPDATED DIALOG LOGIC ---
   win.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(win, {
-      type: 'warning', // 'warning' is more appropriate for potential data loss
+      type: 'info',
       buttons: ['OK', 'Cancel'],
       title: 'Unsaved Changes',
-      message: 'You have unsaved changes. Do you want to quit anyway?',
+      message: 'You have unsaved changes. Quit?',
       detail: 'Any changes you made will be lost.',
       defaultId: 1, // Index of 'Cancel'. Makes 'Cancel' the default button.
       cancelId: 1   // Index of 'Cancel'. Maps the Esc key to 'Cancel'.
@@ -355,7 +431,21 @@ function createWindow() {
   });
 
 
-  win.loadURL(`http://localhost:${serverPort}`);
+  let loadUrl = `http://localhost:${serverPort}`;
+
+  // If the app was launched with file arguments, create the special URL
+  if (filesToOpenOnLaunch.length > 0) {
+      const dataUris = filesToOpenOnLaunch.map(fileToDataURI).filter(uri => uri !== null);
+      if (dataUris.length > 0) {
+          const config = { files: dataUris };
+          const encodedConfig = encodeURIComponent(JSON.stringify(config));
+          loadUrl += `#${encodedConfig}`;
+      }
+      // Clear the array so we don't re-open on window recreation (e.g. on 'activate')
+      filesToOpenOnLaunch = [];
+  }
+
+  win.loadURL(loadUrl);
 //   win.webContents.openDevTools();
 
   // --- F12 to open DevTools ---
