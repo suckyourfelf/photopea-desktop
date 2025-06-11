@@ -369,29 +369,32 @@ const mimeTypes = {
   '.bmp': 'image/bmp'
 };
 
-function fileToDataURI(filePath) {
-    try {
-        const fileContent = fs.readFileSync(filePath);
-        const ext = path.extname(filePath).toLowerCase();
-        const mimeType = mimeTypes[ext] || 'application/octet-stream';
-        return `data:${mimeType};base64,${fileContent.toString('base64')}`;
-    } catch (error) {
-        console.error(`Failed to read and encode file ${filePath}:`, error);
-        return null;
-    }
-}
-
 function openFiles(filePaths) {
     if (!win || win.isDestroyed()) {
         console.error("Main window not available to open files.");
         return;
     }
-    const dataUris = filePaths.map(fileToDataURI).filter(uri => uri !== null);
-    if (dataUris.length > 0) {
-        const config = { files: dataUris };
-        const encodedConfig = encodeURIComponent(JSON.stringify(config));
-        const newUrl = `http://localhost:${serverPort}#${encodedConfig}`;
-        win.loadURL(newUrl);
+
+    const fileData = filePaths.map(filePath => {
+        try {
+            const buffer = fs.readFileSync(filePath);
+            const ext = path.extname(filePath).toLowerCase();
+            const mimeType = mimeTypes[ext] || 'application/octet-stream';
+            return {
+                buffer, // Send the raw buffer
+                name: path.basename(filePath),
+                type: mimeType
+            };
+        } catch (error) {
+            console.error(`Failed to read file ${filePath}:`, error);
+            return null;
+        }
+    }).filter(file => file !== null);
+
+    if (fileData.length > 0) {
+        // Send the file data (buffers) directly to the renderer process.
+        // This avoids URL length limitations.
+        win.webContents.send('open-files-data', fileData);
     }
 }
 
@@ -431,21 +434,16 @@ function createWindow() {
   });
 
 
-  let loadUrl = `http://localhost:${serverPort}`;
+  win.loadURL(`http://localhost:${serverPort}`);
 
-  // If the app was launched with file arguments, create the special URL
-  if (filesToOpenOnLaunch.length > 0) {
-      const dataUris = filesToOpenOnLaunch.map(fileToDataURI).filter(uri => uri !== null);
-      if (dataUris.length > 0) {
-          const config = { files: dataUris };
-          const encodedConfig = encodeURIComponent(JSON.stringify(config));
-          loadUrl += `#${encodedConfig}`;
+  // After the window has finished loading, send the files (if any)
+  win.webContents.once('did-finish-load', () => {
+      if (filesToOpenOnLaunch.length > 0) {
+          openFiles(filesToOpenOnLaunch);
+          // Clear the array so we don't re-open on window recreation
+          filesToOpenOnLaunch = [];
       }
-      // Clear the array so we don't re-open on window recreation (e.g. on 'activate')
-      filesToOpenOnLaunch = [];
-  }
-
-  win.loadURL(loadUrl);
+  });
 //   win.webContents.openDevTools();
 
   // --- F12 to open DevTools ---

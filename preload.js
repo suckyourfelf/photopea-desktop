@@ -8,6 +8,34 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.send('window-control', 'close'),
 });
 
+// Listen for file data from the main process
+ipcRenderer.on('open-files-data', (event, filesData) => {
+    // Find the single, hidden file input element Photopea uses.
+    const fileInput = document.querySelector('input[type="file"]');
+    if (!fileInput) {
+        console.error('Photopea file input element not found.');
+        return;
+    }
+
+    // Reconstruct File objects from the raw data.
+    const fileObjects = filesData.map(file => {
+        return new File([file.buffer], file.name, { type: file.type });
+    });
+
+    if (fileObjects.length === 0) return;
+
+    // The DataTransfer object is the standard way to create a FileList.
+    const dataTransfer = new DataTransfer();
+    fileObjects.forEach(file => dataTransfer.items.add(file));
+
+    // Assign the files to the input element's files property.
+    fileInput.files = dataTransfer.files;
+
+    // Dispatch a 'change' event on the input element. This is crucial, as it
+    // triggers the event listener that Photopea uses to process the files.
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+});
+
 /**
  * Main function for all DOM manipulations.
  */
