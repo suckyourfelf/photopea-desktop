@@ -8,10 +8,12 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const express = require('express');
+const net = require('net');
 
 // --- Server Setup ---
 const expressApp = express();
-const PORT = 38451;
+const BASE_PORT = 38451;
+let serverPort; // Will be determined at runtime
 
 // --- Electron App Logic ---
 let win;
@@ -39,6 +41,28 @@ function getResourcePath(relativePath) {
     }
     // Otherwise, fall back to the version bundled with the app
     return path.join(bundlePath, relativePath);
+}
+
+// Helper to find an available TCP port, starting from a base port.
+function findFreePort(startPort) {
+    return new Promise((resolve, reject) => {
+        const server = net.createServer();
+        server.unref(); // Don't keep the event loop running
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                // Port is in use, recursively try the next one
+                resolve(findFreePort(startPort + 1));
+            } else {
+                reject(err);
+            }
+        });
+        server.listen({ port: startPort, host: '127.0.0.1' }, () => {
+            const port = server.address().port;
+            server.close(() => {
+                resolve(port);
+            });
+        });
+    });
 }
 
 // --- Reusable Font Download Logic ---
@@ -331,7 +355,7 @@ function createWindow() {
   });
 
 
-  win.loadURL(`http://localhost:${PORT}`);
+  win.loadURL(`http://localhost:${serverPort}`);
 //   win.webContents.openDevTools();
 
   // --- F12 to open DevTools ---
@@ -437,8 +461,11 @@ app.whenReady().then(async () => {
   // 2. Fallback to serving packaged application files if not found in user-data.
   expressApp.use(express.static(bundlePath));
   
-  expressApp.listen(PORT, () => {
-    console.log(`Server started on http://localhost:${PORT}`);
+  // Find a free port before starting the server.
+  serverPort = await findFreePort(BASE_PORT);
+  
+  expressApp.listen(serverPort, '127.0.0.1', () => {
+    console.log(`Server started on http://localhost:${serverPort}`);
     createWindow();
   });
 });
